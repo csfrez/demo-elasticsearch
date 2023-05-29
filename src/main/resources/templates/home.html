@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://thymeleaf.org">
+
+<head>
+    <meta charset="ISO-8859-1">
+    <title>Invoice Page</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+</head>
+
+<body>
+
+<div class="container my-5 ">
+    <h1 class="text-center">{Spring Boot + Elasticsearch App}<br>Invoice Page<br/>
+    </h1>
+    <a th:href="@{/showNewInvoiceForm}" class="btn btn-primary m-3"> Add Invoice </a>
+    <!--     <a href="/listInvoice" class="btn btn-danger text-right">Go To Invoices List</a> -->
+
+</div>
+</body>
+
+</html>
