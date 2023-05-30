@@ -1,0 +1,22 @@
+{
+    "mappings": {
+        "properties": {
+            "qa_id": {
+                "type": "integer"
+            },
+            "standard_question": {
+                "type": "text",
+                "analyzer": "ik_max_word",
+                "search_analyzer": "ik_smart"
+            },
+            "standard_answer": {
+                "type": "text",
+                "analyzer": "ik_max_word",
+                "search_analyzer": "ik_smart"
+            }
+        }
+    },
+    "settings": {
+        "number_of_shards": 1
+    }
+}

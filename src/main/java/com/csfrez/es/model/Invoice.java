@@ -14,7 +14,7 @@ public class Invoice {
     @Id
     private String id;
 
-    @Field(type = FieldType.Text, name = "name")
+    @Field(type = FieldType.Text, name = "name", analyzer = "ik_smart")
     private String name;
 
     @Field(type = FieldType.Text, name = "number")

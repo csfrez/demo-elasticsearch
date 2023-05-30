@@ -21,7 +21,6 @@ public class InvoiceRepository {
     private final String indexName = "invoices";
 
     public String createOrUpdateInvoice(Invoice invoice) throws IOException {
-
         IndexResponse response = elasticsearchClient.index(
                 i -> i.index(indexName)
                         .id(invoice.getId())
