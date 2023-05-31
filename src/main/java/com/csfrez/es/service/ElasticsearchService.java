@@ -212,7 +212,8 @@ public class ElasticsearchService {
     public <T> List<Hit<T>> searchDocumentList(String indexName, Class<T> clazz, String field, String value) throws IOException {
         SearchResponse<T> search = elasticsearchClient.search(s -> {
             if(StringUtils.hasText(field) && StringUtils.hasText(value)){
-                s.query(q -> q.term(t -> t.field(field).value(v -> v.stringValue(value))));
+                //s.query(q -> q.term(t -> t.field(field).value(v -> v.stringValue(value))));
+                s.query(q -> q.match(t -> t.field(field).query(value)));
             }
             return s.index(indexName);
         }, clazz);
@@ -227,7 +228,8 @@ public class ElasticsearchService {
                         .query(query -> query.bool(boolQuery -> {
                             for(Map<String, String> paramMap: paramList){
                                 for(Map.Entry<String, String> entry : paramMap.entrySet()){
-                                    boolQuery.must(must -> must.term(e -> e.field(entry.getKey()).value(entry.getValue())));
+                                    //boolQuery.must(must -> must.term(e -> e.field(entry.getKey()).value(entry.getValue())));
+                                    boolQuery.must(must -> must.match(e -> e.field(entry.getKey()).query(entry.getValue())));
                                 }
                             }
                             return boolQuery;
