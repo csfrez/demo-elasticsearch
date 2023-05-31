@@ -6,6 +6,7 @@ import co.elastic.clients.elasticsearch._types.mapping.Property;
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
 import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
+import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
 import co.elastic.clients.elasticsearch.indices.DeleteIndexResponse;
 import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
@@ -13,6 +14,7 @@ import co.elastic.clients.transport.endpoints.BooleanResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -159,17 +161,15 @@ public class ElasticsearchService {
      * @param id
      * @param document
      * @param clazz
-     * @param <T>
      * @return
      * @throws IOException
      */
-    public <T> T updateDocument(String indexName, String id, Object document, Class<T> clazz) throws IOException {
-        UpdateResponse<T> updateResponse = elasticsearchClient.update(updateRequest ->
-                updateRequest.index(indexName).id(id)
-                        .doc(document), clazz
+    public Result updateDocument(String indexName, String id, Object document, Class<?> clazz) throws IOException {
+        UpdateResponse<?> updateResponse = elasticsearchClient.update(updateRequest ->
+                updateRequest.index(indexName).id(id).doc(document), clazz
         );
         log.info("updateResponse: {}, responseStatus: {}", updateResponse, updateResponse.result());
-        return updateResponse.get().source();
+        return updateResponse.result();
     }
 
     /**
@@ -190,21 +190,51 @@ public class ElasticsearchService {
     /**
      * 批量插入文档
      * @param indexName
-     * @param objectList
+     * @param documentList
      * @return
      * @throws IOException
      */
-    public boolean batchAddDocument(String indexName, List<Object> objectList) throws IOException {
+    public boolean batchAddDocument(String indexName, List<Map<String, Object>> documentList) throws IOException {
         List<BulkOperation> bulkOperationList = new ArrayList<>();
-        for(Object object: objectList){
-            bulkOperationList.add(new BulkOperation.Builder().create(e -> e.document(object)).build());
-
+        for(Map<String, Object> document: documentList){
+            document.forEach((key, value) -> {
+                bulkOperationList.add(new BulkOperation.Builder().create(e -> e.id(key).document(value)).build());
+            });
         }
         BulkResponse bulkResponse = elasticsearchClient.bulk(bulkRequest ->
                 bulkRequest.index(indexName).operations(bulkOperationList)
         );
         log.info("bulkResponse: {}, errors:{}", bulkResponse, bulkResponse.errors());
-        return bulkResponse.errors();
+        return !bulkResponse.errors();
+    }
+
+
+    public <T> List<Hit<T>> searchDocumentList(String indexName, Class<T> clazz, String field, String value) throws IOException {
+        SearchResponse<T> search = elasticsearchClient.search(s -> {
+            if(StringUtils.hasText(field) && StringUtils.hasText(value)){
+                s.query(q -> q.term(t -> t.field(field).value(v -> v.stringValue(value))));
+            }
+            return s.index(indexName);
+        }, clazz);
+        log.info("search={}", search);
+        return search.hits().hits();
+    }
+
+    public <T> List<Hit<T>> searchDocumentPage(String indexName, Class<T> clazz, List<Map<String, String>> paramList,
+                                               Integer pageNo, Integer pageSize) throws IOException {
+        int from = (pageNo-1) * pageSize;
+        SearchResponse<T> search = elasticsearchClient.search(s -> s.index(indexName).from(from).size(pageSize)
+                        .query(query -> query.bool(boolQuery -> {
+                            for(Map<String, String> paramMap: paramList){
+                                for(Map.Entry<String, String> entry : paramMap.entrySet()){
+                                    boolQuery.must(must -> must.term(e -> e.field(entry.getKey()).value(entry.getValue())));
+                                }
+                            }
+                            return boolQuery;
+                        })),
+                clazz);
+        log.info("search={}", search);
+        return search.hits().hits();
     }
 
 }
